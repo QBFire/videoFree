@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useAppStore } from '../store/AppStore';
 import { PlaybackState } from '../types';
 import { formatTime } from '../utils/helpers';
 
 const Player = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsTimeoutRef = useRef<number | null>(null);
+  const controlsTimeoutRef = useRef<number | NodeJS.Timeout | null>(null);
   
   const { 
     currentMedia, 
@@ -79,7 +79,7 @@ const Player = () => {
 
   // 控制条显示/隐藏逻辑
   useEffect(() => {
-    let timeout: number | null = null;
+    let timeout: number | NodeJS.Timeout | null = null;
 
     const hideControls = () => {
       if (!isMinimized && showControls) {
@@ -175,6 +175,7 @@ const Player = () => {
   return (
     <div 
       className={`player-container ${isMinimized ? 'player-minimized' : ''} ${isFullscreen ? 'player-fullscreen' : ''}`}
+      data-testid="player-container"
       onClick={() => setShowControls(!showControls)}
     >
       <div className="player-content">
@@ -188,6 +189,7 @@ const Player = () => {
                 onTimeUpdate={handleTimeUpdate}
                 onClick={handleTogglePlay}
                 className="video-element"
+                data-testid="video-element"
               />
               
               {/* 加载指示器 */}
@@ -208,12 +210,13 @@ const Player = () => {
         
         {/* 控制条 */}
         {(showControls || !isMinimized) && (
-          <div className="player-controls">
+          <div className="player-controls" data-testid="controls-container">
             <button 
-              className="player-control-btn"
-              onClick={(e) => { e.stopPropagation(); handleTogglePlay(); }}
-              title={playbackState === PlaybackState.PLAYING ? '暂停' : '播放'}
-            >
+                className="player-control-btn"
+                data-testid="play-pause-button"
+                onClick={(e) => { e.stopPropagation(); handleTogglePlay(); }}
+                title={playbackState === PlaybackState.PLAYING ? '暂停' : '播放'}
+              >
               {playbackState === PlaybackState.PLAYING ? '⏸️' : '▶️'}
             </button>
             
@@ -221,6 +224,7 @@ const Player = () => {
               <input
                 type="range"
                 className="player-progress-slider"
+                data-testid="progress-bar"
                 min="0"
                 max="100"
                 value={playbackProgress}
@@ -235,17 +239,19 @@ const Player = () => {
             <div className="player-volume">
               <button 
                 className="player-control-btn"
+                data-testid="mute-button"
                 onClick={(e) => { e.stopPropagation(); toggleMute(); }}
                 title={isMuted ? '取消静音' : '静音'}
               >
-                {isMuted ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}
+                {isMuted ? '🔇' : volume < 50 ? '🔉' : '🔊'}
               </button>
               <input
                 type="range"
                 className="player-volume-slider"
+                data-testid="volume-slider"
                 min="0"
-                max="1"
-                step="0.01"
+                max="100"
+                step="1"
                 value={volume}
                 onChange={(e) => handleVolumeChange(e)}
                 onClick={(e) => e.stopPropagation()}
@@ -253,18 +259,20 @@ const Player = () => {
             </div>
             
             <button 
-              className="player-control-btn"
-              onClick={(e) => { e.stopPropagation(); toggleMinimized(); }}
-              title={isMinimized ? '展开' : '收起'}
-            >
+                className="player-control-btn"
+                data-testid="minimize-button"
+                onClick={(e) => { e.stopPropagation(); toggleMinimized(); }}
+                title={isMinimized ? '展开' : '收起'}
+              >
               {isMinimized ? '🠕' : '🠗'}
             </button>
             
             <button 
-              className="player-control-btn"
-              onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-              title={isFullscreen ? '退出全屏' : '全屏'}
-            >
+                className="player-control-btn"
+                data-testid="fullscreen-button"
+                onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                title={isFullscreen ? '退出全屏' : '全屏'}
+              >
               {isFullscreen ? '🔽' : '🔼'}
             </button>
             
