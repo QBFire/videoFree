@@ -6,7 +6,7 @@ import type { MediaInfo } from '../types';
 
 const HomePage = () => {
   // 从AppStore获取正确的方法
-  const { setCurrentView, setSearchQuery } = useAppStore();
+  const { setCurrentView, setSearchQuery, setCurrentMedia } = useAppStore();
 
   // 模拟首页内容数据
   const mockMediaData: MediaInfo[] = [
@@ -14,7 +14,7 @@ const HomePage = () => {
       id: 'movie-1',
       title: '流浪地球3',
       description: '太阳即将毁灭，人类开启流浪地球计划第三部',
-      posterUrl: 'https://picsum.photos/400/600?random=1',
+      posterUrl: 'https://fastly.picsum.photos/id/472/400/600.jpg?hmac=pDculbb5J0wOSyz9LvgoKbFsvLZv7zs54pDJSVgVgck',
       type: 'movie',
       source: 'sample-plugin',
       rating: 9.2,
@@ -25,7 +25,7 @@ const HomePage = () => {
       id: 'movie-2',
       title: '星际穿越2',
       description: '探索宇宙深处的未知领域',
-      posterUrl: 'https://picsum.photos/400/600?random=2',
+      posterUrl: 'https://fastly.picsum.photos/id/127/400/600.jpg?hmac=1Xxxj284hvwGwlw4oJ_aQEFyO9Q5TTQBln1T-GZbDvI',
       type: 'movie',
       source: 'sample-plugin',
       rating: 9.0,
@@ -36,7 +36,7 @@ const HomePage = () => {
       id: 'tv-1',
       title: '三体',
       description: '根据刘慈欣同名小说改编',
-      posterUrl: 'https://picsum.photos/400/600?random=3',
+      posterUrl: 'https://fastly.picsum.photos/id/8/400/600.jpg?hmac=ge4V3QNoZcJ6QJ7uysJatg_6n0oytTbSd6v2hvp-t3M',
       type: 'tv',
       source: 'sample-plugin',
       rating: 8.8,
@@ -47,7 +47,7 @@ const HomePage = () => {
       id: 'anime-1',
       title: '你的名字2',
       description: '新海诚最新力作',
-      posterUrl: 'https://picsum.photos/400/600?random=4',
+      posterUrl: 'https://fastly.picsum.photos/id/876/400/600.jpg?hmac=t2sGgUnkU6V0AHOngbl60-kVcN3t8Tpu5RydPnvQ0YU',
       type: 'anime',
       source: 'sample-plugin',
       rating: 9.5,
@@ -58,7 +58,7 @@ const HomePage = () => {
       id: 'movie-3',
       title: '复仇者联盟6',
       description: '超级英雄们再次集结',
-      posterUrl: 'https://picsum.photos/400/600?random=5',
+      posterUrl: 'https://fastly.picsum.photos/id/866/400/600.jpg?hmac=S5CHrURu0mgSN2deRbAuTsQozkcARWQAKt4n5TszrkQ',
       type: 'movie',
       source: 'sample-plugin',
       rating: 8.5,
@@ -69,7 +69,7 @@ const HomePage = () => {
       id: 'tv-2',
       title: '绝命毒师',
       description: '经典美剧',
-      posterUrl: 'https://picsum.photos/400/600?random=6',
+      posterUrl: 'https://fastly.picsum.photos/id/10/400/600.jpg?hmac=ijDeI0Nxxdtf9lzjmFT580ZIcg3CbzDRbOUSUQM7CfQ',
       type: 'tv',
       source: 'sample-plugin',
       rating: 9.7,
@@ -89,7 +89,8 @@ const HomePage = () => {
   };
 
   const handleMediaClick = (media: MediaInfo) => {
-    // 这里可以实现点击媒体卡片的逻辑
+    // 使用AppStore的setCurrentMedia方法来设置当前播放的媒体
+    setCurrentMedia(media);
     console.log('Media clicked:', media);
   };
 

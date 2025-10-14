@@ -1,8 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
-import { useAppStore } from '../store/AppStore';
+import { useAppStore } from '../store';
 import { PlaybackState } from '../types';
 import { formatTime } from '../utils/helpers';
-// 导入Edge浏览器兼容性工具
 import { isEdgeBrowser, applyEdgeCssFixes } from '../utils/edgeCompatibility';
 
 const Player = () => {
@@ -14,16 +13,12 @@ const Player = () => {
     currentEpisode,
     playbackState, 
     setPlaybackState,
-    playbackProgress,
-    setPlaybackProgress,
+    currentTime,
+    setCurrentTime,
     volume,
     setVolume,
     isMuted,
-    toggleMute,
-    isFullscreen,
-    toggleFullscreen,
-    isMinimized,
-    toggleMinimized
+    setIsMuted
   } = useAppStore();
 
   const [showControls, setShowControls] = useState(true);
@@ -56,19 +51,18 @@ const Player = () => {
     }
   };
 
-  // 处理时间更新
+  // 监听视频时间更新
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
 
-    const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
-    setPlaybackProgress(progress);
+    setCurrentTime(videoRef.current.currentTime);
   };
 
   // 处理进度条拖动
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!videoRef.current) return;
 
-    const newTime = (parseFloat(e.target.value) / 100) * videoRef.current.duration;
+    const newTime = parseFloat(e.target.value);
     videoRef.current.currentTime = newTime;
   };
 
@@ -96,7 +90,7 @@ const Player = () => {
     let timeout: number | null = null;
 
     const hideControls = () => {
-      if (!isMinimized && showControls) {
+      if (showControls) {
         timeout = setTimeout(() => setShowControls(false), 3000);
       }
     };
@@ -105,7 +99,7 @@ const Player = () => {
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [isMinimized, showControls]);
+  }, [showControls]);
 
   // 监听视频事件
   useEffect(() => {
@@ -152,11 +146,11 @@ const Player = () => {
   // 当视频源变化时，重置播放状态
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      setPlaybackProgress(0);
-      setPlaybackState(PlaybackState.IDLE);
-    }
-  }, [videoSource, setPlaybackProgress]);
+        videoRef.current.currentTime = 0;
+        setCurrentTime(0);
+        setPlaybackState(PlaybackState.IDLE);
+      }
+  }, [videoSource]);
 
   // 监听鼠标移动，显示控制栏
   useEffect(() => {
@@ -189,14 +183,14 @@ const Player = () => {
     const video = videoRef.current;
     if (!video) return;
 
-    video.volume = isMuted ? 0 : volume;
+    video.volume = isMuted ? 0 : volume / 100;
     video.muted = isMuted;
     
     // Edge浏览器中的特殊处理
     if (isEdgeBrowser()) {
       // 修复Edge中某些版本的视频音量同步问题
       setTimeout(() => {
-        video.volume = isMuted ? 0 : volume;
+        video.volume = isMuted ? 0 : volume / 100;
         video.muted = isMuted;
       }, 100);
     }
@@ -213,7 +207,7 @@ const Player = () => {
 
   return (
     <div 
-      className={`player-container ${isMinimized ? 'player-minimized' : ''} ${isFullscreen ? 'player-fullscreen' : ''}`}
+      className="player-container"
       data-testid="player-container"
       onClick={() => setShowControls(!showControls)}
     >
@@ -248,7 +242,7 @@ const Player = () => {
         </div>
         
         {/* 控制条 */}
-        {(showControls || !isMinimized) && (
+        {showControls && (
           <div className="player-controls" data-testid="controls-container">
             <button 
                 className="player-control-btn"
@@ -266,12 +260,12 @@ const Player = () => {
                 data-testid="progress-bar"
                 min="0"
                 max="100"
-                value={playbackProgress}
+                value={currentTime}
                 onChange={(e) => handleTimeChange(e)}
                 onClick={(e) => e.stopPropagation()}
               />
               <span className="player-time">
-                {formatTime((videoRef.current?.duration || 0) * playbackProgress / 100)} / {formatTime(videoRef.current?.duration || 0)}
+                {formatTime(currentTime)} / {formatTime(videoRef.current?.duration || 0)}
               </span>
             </div>
             
@@ -279,7 +273,7 @@ const Player = () => {
               <button 
                 className="player-control-btn"
                 data-testid="mute-button"
-                onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
                 title={isMuted ? '取消静音' : '静音'}
               >
                 {isMuted ? '🔇' : volume < 50 ? '🔉' : '🔊'}
@@ -296,24 +290,6 @@ const Player = () => {
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
-            
-            <button 
-                className="player-control-btn"
-                data-testid="minimize-button"
-                onClick={(e) => { e.stopPropagation(); toggleMinimized(); }}
-                title={isMinimized ? '展开' : '收起'}
-              >
-              {isMinimized ? '🠕' : '🠗'}
-            </button>
-            
-            <button 
-                className="player-control-btn"
-                data-testid="fullscreen-button"
-                onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-                title={isFullscreen ? '退出全屏' : '全屏'}
-              >
-              {isFullscreen ? '🔽' : '🔼'}
-            </button>
             
             <button 
               className="player-control-btn player-close"

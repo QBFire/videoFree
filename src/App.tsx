@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAppStore } from './store/AppStore';
+import { useAppStore } from './store';
 import SamplePlugin from './plugin/SamplePlugin';
 import { pluginManager } from './plugin/PluginManager';
 
@@ -18,13 +18,13 @@ import PluginsPage from './pages/PluginsPage';
 import './App.css';
 
 function App() {
-  const { initializeApp, currentMedia, setSearchQuery, searchMedia } = useAppStore();
+  const { loadUserPreferences, currentMedia, setSearchQuery } = useAppStore();
 
   // 应用初始化
   useEffect(() => {
     const init = async () => {
       // 初始化应用
-      await initializeApp();
+      loadUserPreferences();
       
       // 注册示例插件
       try {
@@ -38,12 +38,13 @@ function App() {
     };
 
     init();
-  }, [initializeApp]);
+  }, [loadUserPreferences]);
 
   // 处理搜索
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    searchMedia(query);
+    // 导航到搜索页面，让SearchPage组件处理实际的搜索逻辑
+    window.location.href = '/search';
   };
 
   return (

@@ -1,11 +1,12 @@
 import { useParams } from 'react-router-dom';
+import { useAppStore } from '../store';
 import type { MediaInfo } from '../types';
-
-
 
 const SearchPage = () => {
   const params = useParams();
-  const searchQuery = params.query || '';
+  const { searchQuery } = useAppStore();
+  const queryFromParams = params.query as string || '';
+  const effectiveSearchQuery = searchQuery || queryFromParams;
 
   // 模拟搜索结果数据
   const mockSearchResults: MediaInfo[] = [
@@ -78,11 +79,11 @@ const SearchPage = () => {
   ];
 
   // 根据搜索查询过滤结果
-  const filteredResults = searchQuery
+  const filteredResults = effectiveSearchQuery
     ? mockSearchResults.filter(media => 
-        media.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        media.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        media.genres.some(genre => genre.toLowerCase().includes(searchQuery.toLowerCase()))
+        media.title.toLowerCase().includes(effectiveSearchQuery.toLowerCase()) ||
+        media.description.toLowerCase().includes(effectiveSearchQuery.toLowerCase()) ||
+        media.genres.some(genre => genre.toLowerCase().includes(effectiveSearchQuery.toLowerCase()))
       )
     : [];
 
@@ -95,13 +96,13 @@ const SearchPage = () => {
     <div className="search-page">
       <h1>搜索结果</h1>
       
-      {searchQuery && (
+      {effectiveSearchQuery && (
         <p className="search-query-info">
-          关于 "{searchQuery}" 的搜索结果 ({filteredResults.length})
+          关于 "{effectiveSearchQuery}" 的搜索结果 ({filteredResults.length})
         </p>
       )}
       
-      {searchQuery && (
+      {effectiveSearchQuery && (
         <div className="media-grid">
           {filteredResults.length > 0 ? (
             filteredResults.map((media) => (
@@ -134,7 +135,7 @@ const SearchPage = () => {
         </div>
       )}
       
-      {!searchQuery && (
+      {!effectiveSearchQuery && (
         <div className="search-placeholder">
           <p>请在搜索框中输入关键词</p>
         </div>

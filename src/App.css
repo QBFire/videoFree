@@ -118,6 +118,12 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  overflow-y: auto;
+  min-height: 0; /* 确保flexbox子元素可以正确收缩 */
+}
+
+.content-area {
+  min-height: calc(100vh - 200px); /* 为播放器留出空间 */
 }
 
 /* Search Bar */
@@ -161,6 +167,26 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 24px;
+  /* 确保网格在小屏幕上可以水平滚动 */
+  overflow-x: auto;
+  padding-bottom: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary-color) var(--background-color);
+}
+
+/* 水平滚动条样式 */
+.media-grid::-webkit-scrollbar {
+  height: 6px;
+}
+
+.media-grid::-webkit-scrollbar-track {
+  background: var(--background-color);
+  border-radius: 3px;
+}
+
+.media-grid::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-color);
+  border-radius: 3px;
 }
 
 .media-card {
@@ -212,6 +238,7 @@ body {
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
   z-index: 500;
   transition: transform 0.3s ease;
+  max-height: 60vh; /* 限制播放器最大高度 */
 }
 
 .player-minimized {
@@ -225,6 +252,53 @@ body {
   right: 0;
   bottom: 0;
   z-index: 1000;
+}
+
+/* Episodes Section */
+.episodes-section {
+  margin-top: 32px;
+}
+
+.episodes-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary-color) var(--background-color);
+}
+
+.episodes-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.episodes-list::-webkit-scrollbar-track {
+  background: var(--background-color);
+  border-radius: 3px;
+}
+
+.episodes-list::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-color);
+  border-radius: 3px;
+}
+
+.episode-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.episode-item:hover {
+  background-color: rgba(74, 108, 247, 0.05);
+}
+
+.episode-info {
+  flex: 1;
 }
 
 /* Responsive Design */
