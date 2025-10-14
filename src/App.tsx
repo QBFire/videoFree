@@ -55,9 +55,6 @@ function App() {
         
         {/* 主内容区 */}
         <main className="main-content">
-          {/* 搜索栏 */}
-          <SearchBar onSearch={handleSearch} />
-          
           {/* 路由配置 */}
           <div className="content-area">
             <Routes>

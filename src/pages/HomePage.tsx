@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../store';
+import { useNavigate } from 'react-router-dom';
 
 import SearchBar from '../components/SearchBar';
 import type { MediaInfo } from '../types';
@@ -83,9 +84,12 @@ const HomePage = () => {
     // 可以在这里添加其他初始化逻辑
   }, []);
 
+  const navigate = useNavigate();
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setCurrentView('search');
+    navigate(`/search?q=${encodeURIComponent(query)}`);
   };
 
   const handleMediaClick = (media: MediaInfo) => {
@@ -96,11 +100,12 @@ const HomePage = () => {
 
   return (
     <div className="home-page">
-      <h1>欢迎使用 Videofree</h1>
-      <p>发现精彩影视内容，享受观影乐趣</p>
-      
-      <div className="home-search-section">
-        <SearchBar onSearch={handleSearch} />
+      <div className="home-header">
+        <h1>欢迎使用 Videofree</h1>
+        <p>发现精彩影视内容，享受观影乐趣</p>
+        <div className="home-search-section">
+          <SearchBar onSearch={handleSearch} />
+        </div>
       </div>
       
       <section className="featured-section">
