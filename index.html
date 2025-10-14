@@ -1,10 +1,29 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>television</title>
+    
+    <!-- Edge浏览器兼容性优化 -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="Edge" content="requiresActiveX=true" />
+    <meta name="keywords" content="视频播放器,在线视频,影视播放" />
+    <meta name="description" content="视频播放应用 - 支持多种媒体格式" />
+    
+    <title>视频播放器</title>
+    
+    <!-- CSS Grid和Flexbox的Edge兼容性前缀提示 -->
+    <style>
+      /* Edge浏览器特定样式修复 */
+      @supports (-ms-ime-align: auto) {
+        /* Edge 12-18特定修复 */
+        .edge-fix {
+          display: -ms-flexbox;
+          display: flex;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

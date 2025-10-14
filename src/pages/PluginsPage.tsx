@@ -1,108 +1,130 @@
 import { useState, useEffect } from 'react';
 
 import type { PluginMetadata } from '../types';
+import { pluginManager } from '../plugin/PluginManager';
 
 const PluginsPage = () => {
   const [plugins, setPlugins] = useState<Array<{metadata: PluginMetadata, enabled: boolean}>>([]);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [pluginUrl, setPluginUrl] = useState('');
+  const [installing, setInstalling] = useState(false);
+  const [installError, setInstallError] = useState('');
 
-  // 模拟插件数据
-  const mockPluginsData: Array<{metadata: PluginMetadata, enabled: boolean}> = [
-    {
-      metadata: {
-        id: 'sample-plugin',
-        name: '示例插件',
-        description: '这是一个示例插件，用于展示插件系统的工作原理',
-        version: '1.0.0',
-        author: 'Videofree Team',
-        homepage: 'https://github.com/videofree',
-        icon: 'https://picsum.photos/64/64?random=11',
-        settings: []
-      },
-      enabled: true
-    },
-    {
-      metadata: {
-        id: 'movie-plugin',
-        name: '电影插件',
-        description: '提供电影资源的插件',
-        version: '2.1.3',
-        author: 'Movie Provider',
-        homepage: 'https://example.com/movie-plugin',
-        icon: 'https://picsum.photos/64/64?random=12',
-        settings: [
-          {
-            key: 'quality',
-            type: 'select',
-            label: '视频质量',
-            defaultValue: '1080p',
-            options: ['720p', '1080p', '4K']
-          }
-        ]
-      },
-      enabled: true
-    },
-    {
-      metadata: {
-        id: 'tv-show-plugin',
-        name: '电视剧插件',
-        description: '提供电视剧资源的插件',
-        version: '1.5.2',
-        author: 'TV Provider',
-        homepage: 'https://example.com/tv-plugin',
-        icon: 'https://picsum.photos/64/64?random=13',
-        settings: []
-      },
-      enabled: false
-    },
-    {
-      metadata: {
-        id: 'anime-plugin',
-        name: '动漫插件',
-        description: '提供动漫资源的插件',
-        version: '3.0.1',
-        author: 'Anime Provider',
-        homepage: 'https://example.com/anime-plugin',
-        icon: 'https://picsum.photos/64/64?random=14',
-        settings: [
-          {
-            key: 'subtitles',
-            type: 'boolean',
-            label: '默认显示字幕',
-            defaultValue: true
-          }
-        ]
-      },
-      enabled: true
-    }
-  ];
-
+  // 从插件管理器获取插件列表
   useEffect(() => {
-    // 使用模拟数据
-    setPlugins(mockPluginsData);
+    const loadPlugins = () => {
+      const allPlugins = pluginManager.getAllPlugins();
+      const pluginsWithStatus = allPlugins.map(plugin => ({
+        metadata: plugin.metadata,
+        enabled: pluginManager.isPluginEnabled(plugin.metadata.id)
+      }));
+      setPlugins(pluginsWithStatus);
+    };
+
+    // 初始加载
+    loadPlugins();
+
+    // 监听插件变化 (在实际应用中可能需要使用事件监听)
+    const interval = setInterval(loadPlugins, 5000); // 每5秒刷新一次
+
+    return () => clearInterval(interval);
   }, []);
 
-  const handleTogglePlugin = (pluginId: string) => {
-    // 这里可以实现启用/禁用插件的逻辑
-    console.log('Toggle plugin:', pluginId);
-    setPlugins(prev => 
-      prev.map(plugin => 
-        plugin.metadata.id === pluginId 
-          ? { ...plugin, enabled: !plugin.enabled }
-          : plugin
-      )
-    );
+  const handleTogglePlugin = async (pluginId: string) => {
+    try {
+      const plugin = plugins.find(p => p.metadata.id === pluginId);
+      if (plugin) {
+        if (plugin.enabled) {
+          await pluginManager.disablePlugin(pluginId);
+        } else {
+          await pluginManager.enablePlugin(pluginId);
+        }
+        // 刷新插件列表
+        const updatedPlugins = plugins.map(p => 
+          p.metadata.id === pluginId 
+            ? { ...p, enabled: !p.enabled }
+            : p
+        );
+        setPlugins(updatedPlugins);
+      }
+    } catch (error) {
+      console.error('Failed to toggle plugin:', error);
+    }
   };
 
   const handleConfigurePlugin = (pluginId: string) => {
     // 这里可以实现配置插件的逻辑
-    console.log('Configure plugin:', pluginId);
     // 实际应用中可能会打开一个配置对话框
+    console.log('Configure plugin:', pluginId);
   };
 
   const handleInstallPlugin = () => {
-    // 这里可以实现安装插件的逻辑
-    console.log('Install plugin');
-    // 实际应用中可能会打开一个文件选择对话框或插件市场
+    // 打开安装插件的模态框
+    setPluginUrl('');
+    setInstallError('');
+    setShowInstallModal(true);
+  };
+
+  const handleInstallFromUrl = async () => {
+    // 验证URL
+    if (!pluginUrl || !isValidUrl(pluginUrl)) {
+      setInstallError('请输入有效的插件URL');
+      return;
+    }
+
+    try {
+      setInstalling(true);
+      setInstallError('');
+      
+      // 显示安装进度信息
+      setInstallError('正在从URL加载插件...');
+      
+      const success = await pluginManager.loadPluginFromUrl(pluginUrl);
+      
+      if (success) {
+        // 刷新插件列表
+        const allPlugins = pluginManager.getAllPlugins();
+        const pluginsWithStatus = allPlugins.map(plugin => ({
+          metadata: plugin.metadata,
+          enabled: pluginManager.isPluginEnabled(plugin.metadata.id)
+        }));
+        setPlugins(pluginsWithStatus);
+        
+        // 关闭模态框
+        setShowInstallModal(false);
+      } else {
+        setInstallError('插件安装失败，请检查URL是否正确');
+      }
+    } catch (error) {
+      console.error('Failed to install plugin from URL:', error);
+      
+      // 根据不同类型的错误提供更具体的错误信息
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('Failed to fetch plugin')) {
+        setInstallError(`网络错误: 无法从URL获取插件代码。请检查URL是否正确，以及网络连接是否正常。`);
+      } else if (errorMessage.includes('Plugin execution failed')) {
+        setInstallError(`插件执行错误: 插件代码可能包含语法错误或运行时错误。${errorMessage}`);
+      } else if (errorMessage.includes('Invalid plugin format')) {
+        setInstallError(`插件格式错误: 插件不符合应用的插件接口规范。${errorMessage}`);
+      } else if (errorMessage.includes('Missing required')) {
+        setInstallError(`插件结构不完整: ${errorMessage}`);
+      } else {
+        setInstallError(`插件安装失败: ${errorMessage}`);
+      }
+    } finally {
+      setInstalling(false);
+    }
+  };
+
+  // 验证URL格式
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
 
   return (
@@ -159,6 +181,80 @@ const PluginsPage = () => {
           </div>
         ))}
       </div>
+      
+      {/* 安装插件模态框 */}
+      {showInstallModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>通过URL安装插件</h2>
+              <button 
+                className="close-button"
+                onClick={() => setShowInstallModal(false)}
+                disabled={installing}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <p>请输入插件的URL地址，系统将从该地址加载并安装插件：</p>
+              
+              <div className="form-group">
+                <label htmlFor="plugin-url">插件URL：</label>
+                <input
+                  id="plugin-url"
+                  type="url"
+                  value={pluginUrl}
+                  onChange={(e) => setPluginUrl(e.target.value)}
+                  placeholder="https://example.com/path/to/plugin.js"
+                  disabled={installing}
+                />
+              </div>
+              
+              {installError && (
+                <div className="error-message">
+                  {installError}
+                </div>
+              )}
+              
+              <div className="installation-notice">
+                <p>注意：</p>
+                <ul>
+                  <li>请确保您信任该插件的来源，因为插件将在您的应用中执行代码</li>
+                  <li>插件必须符合应用的插件接口规范才能正常工作</li>
+                  <li>安装完成后，插件将自动启用并可在列表中查看</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="cancel-button"
+                onClick={() => setShowInstallModal(false)}
+                disabled={installing}
+              >
+                取消
+              </button>
+              
+              <button 
+                className="install-button"
+                onClick={handleInstallFromUrl}
+                disabled={installing || !pluginUrl}
+              >
+                {installing ? (
+                  <>
+                    <span className="loading-spinner"></span>
+                    安装中...
+                  </>
+                ) : (
+                  '安装插件'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

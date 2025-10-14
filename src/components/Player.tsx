@@ -2,10 +2,12 @@ import { useRef, useState, useEffect } from 'react';
 import { useAppStore } from '../store/AppStore';
 import { PlaybackState } from '../types';
 import { formatTime } from '../utils/helpers';
+// 导入Edge浏览器兼容性工具
+import { isEdgeBrowser, applyEdgeCssFixes } from '../utils/edgeCompatibility';
 
 const Player = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsTimeoutRef = useRef<number | NodeJS.Timeout | null>(null);
+  const controlsTimeoutRef = useRef<number | null>(null);
   
   const { 
     currentMedia, 
@@ -28,6 +30,18 @@ const Player = () => {
   
   // 视频源 - 添加类型检查确保是字符串
   const videoSource = typeof currentEpisode?.playUrl === 'string' ? currentEpisode.playUrl : 'https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.mp4';
+  
+  // 组件挂载后应用Edge特定的CSS修复
+  useEffect(() => {
+    if (isEdgeBrowser()) {
+      const playerContainer = document.querySelector('.player-container');
+      if (playerContainer) {
+        applyEdgeCssFixes(playerContainer as HTMLElement);
+      }
+    }
+  }, []);
+
+
 
   // 处理视频播放/暂停
   const handleTogglePlay = () => {
@@ -79,7 +93,7 @@ const Player = () => {
 
   // 控制条显示/隐藏逻辑
   useEffect(() => {
-    let timeout: number | NodeJS.Timeout | null = null;
+    let timeout: number | null = null;
 
     const hideControls = () => {
       if (!isMinimized && showControls) {
@@ -98,11 +112,27 @@ const Player = () => {
     const video = videoRef.current;
     if (!video) return;
 
-    const handlePlay = () => setPlaybackState(PlaybackState.PLAYING);
-    const handlePause = () => setPlaybackState(PlaybackState.PAUSED);
-    const handleEnded = () => setPlaybackState(PlaybackState.ENDED);
-    const handleWaiting = () => setPlaybackState(PlaybackState.BUFFERING);
-    const handleCanPlay = () => setPlaybackState(PlaybackState.PLAYING);
+    // Edge兼容的事件处理器
+    const handlePlay = () => {
+      // 修复Edge中播放状态可能的闪烁问题
+      requestAnimationFrame(() => setPlaybackState(PlaybackState.PLAYING));
+    };
+    
+    const handlePause = () => {
+      requestAnimationFrame(() => setPlaybackState(PlaybackState.PAUSED));
+    };
+    
+    const handleEnded = () => {
+      requestAnimationFrame(() => setPlaybackState(PlaybackState.ENDED));
+    };
+    
+    const handleWaiting = () => {
+      requestAnimationFrame(() => setPlaybackState(PlaybackState.BUFFERING));
+    };
+    
+    const handleCanPlay = () => {
+      requestAnimationFrame(() => setPlaybackState(PlaybackState.PLAYING));
+    };
 
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
@@ -161,6 +191,15 @@ const Player = () => {
 
     video.volume = isMuted ? 0 : volume;
     video.muted = isMuted;
+    
+    // Edge浏览器中的特殊处理
+    if (isEdgeBrowser()) {
+      // 修复Edge中某些版本的视频音量同步问题
+      setTimeout(() => {
+        video.volume = isMuted ? 0 : volume;
+        video.muted = isMuted;
+      }, 100);
+    }
   }, [volume, isMuted]);
 
   // 处理关闭播放器

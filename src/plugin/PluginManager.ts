@@ -5,6 +5,8 @@
 
 import type { Plugin } from '../types';
 import { storageManager } from '../storage';
+// 导入Edge浏览器兼容性工具
+import { isEdgeBrowser, fetchForEdge } from '../utils/edgeCompatibility';
 
 class PluginManager {
   private plugins: Map<string, Plugin> = new Map();
@@ -384,14 +386,138 @@ class PluginManager {
     try {
       console.log(`Loading plugin from URL: ${url}`);
       
-      // 在实际应用中，这里应该使用fetch或其他方式从URL加载插件代码
-      // 由于这是一个示例，我们将返回一个模拟的成功结果
-      console.warn('This is a mock implementation. In a real application, you would fetch and execute the plugin code from the URL.');
+      // 使用fetch从URL加载插件代码 - 使用Edge兼容的fetch
+      const response = await fetchForEdge(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/javascript',
+        },
+        // 添加cache-control以确保获取最新的插件代码
+        cache: 'no-cache'
+      });
       
-      return true;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch plugin: ${response.status} ${response.statusText}`);
+      }
+      
+      // 获取插件代码文本
+      const pluginCode = await response.text();
+      
+      // 创建一个更安全、更灵活的执行环境
+      // 支持多种导出方式
+      let plugin;
+      try {
+        // 尝试使用不同的方式执行和获取插件对象
+        // 1. 支持IIFE格式的插件 (立即调用函数表达式)
+        // 针对Edge浏览器优化的执行环境
+        const iifeWrapper = `
+          (function() {
+            let module = { exports: {} };
+            let exports = module.exports;
+            let plugin = null;
+            
+            try {
+              // 执行插件代码
+              ${pluginCode}
+              
+              // 尝试多种导出方式，增加Edge兼容性
+              return window?.plugin || module.exports || exports || plugin;
+            } catch (e) {
+              console.error('Plugin execution error:', e);
+              throw e;
+            }
+          })()
+        `;
+        
+        // 使用Function构造函数执行代码
+        plugin = new Function(iifeWrapper)();
+        
+        // 针对Edge浏览器的特殊处理：解决Edge中可能存在的执行时序问题
+        if (isEdgeBrowser()) {
+          // 给予额外的时间确保插件代码在Edge中完全执行
+          await new Promise(resolve => setTimeout(resolve, 50));
+          // 再次尝试获取插件对象（如果之前获取失败）
+          if (!plugin || typeof plugin !== 'object') {
+            try {
+              plugin = new Function(iifeWrapper)();
+            } catch (retryError) {
+              console.warn('Retry plugin execution in Edge failed:', retryError);
+            }
+          }
+        }
+        
+        // 检查插件是否为函数，如果是，则尝试实例化
+        if (typeof plugin === 'function') {
+          try {
+            plugin = new plugin();
+          } catch (e) {
+            console.warn('Failed to instantiate plugin as constructor, trying direct call:', e);
+            try {
+              plugin = plugin();
+            } catch (e2) {
+              console.warn('Failed to call plugin as function:', e2);
+            }
+          }
+        }
+        
+        // 确保插件是一个对象
+        if (!plugin || typeof plugin !== 'object') {
+          throw new Error('Plugin code did not return a valid plugin object');
+        }
+      } catch (error: any) {
+        console.error('Failed to execute plugin code:', error);
+        throw new Error(`Plugin execution failed: ${error.message || String(error)}`);
+      }
+      
+      // 验证插件是否符合Plugin接口
+      try {
+        if (!plugin.metadata || typeof plugin.metadata !== 'object') {
+          throw new Error('Missing or invalid metadata property');
+        }
+        
+        if (typeof plugin.search !== 'function') {
+          throw new Error('Missing required search method');
+        }
+        
+        if (typeof plugin.getMediaDetail !== 'function') {
+          throw new Error('Missing required getMediaDetail method');
+        }
+        
+        if (typeof plugin.getEpisodes !== 'function') {
+          throw new Error('Missing required getEpisodes method');
+        }
+        
+        if (typeof plugin.getPlayUrl !== 'function') {
+          throw new Error('Missing required getPlayUrl method');
+        }
+        
+        // 验证metadata的必要字段
+        const requiredMetaFields = ['id', 'name', 'version', 'description', 'author'];
+        for (const field of requiredMetaFields) {
+          if (!plugin.metadata[field]) {
+            throw new Error(`Missing required metadata field: ${field}`);
+          }
+        }
+      } catch (validationError: any) {
+        console.error('Plugin validation failed:', validationError);
+        throw new Error(`Invalid plugin format: ${validationError.message}`);
+      }
+      
+      // 注册插件
+      const result = await this.registerPlugin(plugin);
+      
+      if (result) {
+        console.log(`Plugin ${plugin.metadata.name} loaded and registered successfully from URL: ${url}`);
+        // 自动启用新安装的插件
+        await this.enablePlugin(plugin.metadata.id);
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Failed to load plugin from URL:', error);
-      return false;
+      // 抛出详细的错误信息，以便UI可以显示给用户
+      throw error;
     }
   }
 
