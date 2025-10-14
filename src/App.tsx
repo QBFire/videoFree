@@ -5,7 +5,6 @@ import SamplePlugin from './plugin/SamplePlugin';
 import { pluginManager } from './plugin/PluginManager';
 
 import Navbar from './components/Navbar';
-import SearchBar from './components/SearchBar';
 import Player from './components/Player';
 
 import HomePage from './pages/HomePage';
@@ -18,7 +17,7 @@ import PluginsPage from './pages/PluginsPage';
 import './App.css';
 
 function App() {
-  const { loadUserPreferences, currentMedia, setSearchQuery } = useAppStore();
+  const { loadUserPreferences, currentMedia } = useAppStore();
 
   // 应用初始化
   useEffect(() => {
@@ -39,13 +38,6 @@ function App() {
 
     init();
   }, [loadUserPreferences]);
-
-  // 处理搜索
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    // 导航到搜索页面，让SearchPage组件处理实际的搜索逻辑
-    window.location.href = '/search';
-  };
 
   return (
     <Router>

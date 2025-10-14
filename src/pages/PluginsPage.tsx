@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 import type { PluginMetadata } from '../types';
 import { pluginManager } from '../plugin/PluginManager';
+import { checkNetworkConnection } from '../utils/helpers';
 
 const PluginsPage = () => {
   const [plugins, setPlugins] = useState<Array<{metadata: PluginMetadata, enabled: boolean}>>([]);
@@ -67,8 +68,8 @@ const PluginsPage = () => {
 
   const handleInstallFromUrl = async () => {
     // 验证URL
-    if (!pluginUrl || !isValidUrl(pluginUrl)) {
-      setInstallError('请输入有效的插件URL');
+    if (!pluginUrl) {
+      setInstallError('请输入插件URL');
       return;
     }
 
@@ -77,9 +78,29 @@ const PluginsPage = () => {
       setInstallError('');
       
       // 显示安装进度信息
+      setInstallError('正在检查URL有效性...');
+      
+      // 增强的URL验证
+      const validationResult = await isEnhancedValidUrl(pluginUrl);
+      if (!validationResult.isValid) {
+        setInstallError(validationResult.errorMessage || 'URL无效');
+        return;
+      }
+      
       setInstallError('正在从URL加载插件...');
       
-      const success = await pluginManager.loadPluginFromUrl(pluginUrl);
+      // 设置超时处理，防止长时间等待
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Request timeout: 服务器响应超时，请检查URL是否有效或稍后再试'));
+        }, 30000); // 30秒超时
+      });
+      
+      // 使用Promise.race处理超时
+      const success = await Promise.race([
+        pluginManager.loadPluginFromUrl(pluginUrl),
+        timeoutPromise
+      ]);
       
       if (success) {
         // 刷新插件列表
@@ -100,9 +121,22 @@ const PluginsPage = () => {
       
       // 根据不同类型的错误提供更具体的错误信息
       const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log('Error message:', errorMessage);
       
-      if (errorMessage.includes('Failed to fetch plugin')) {
+      if (errorMessage.includes('404')) {
+        setInstallError(`URL错误: 找不到请求的资源（404错误）。请确认插件URL是否正确，该地址可能不存在或已更改。`);
+      } else if (errorMessage.includes('Failed to fetch plugin')) {
         setInstallError(`网络错误: 无法从URL获取插件代码。请检查URL是否正确，以及网络连接是否正常。`);
+      } else if (errorMessage.includes('Network error') || errorMessage.includes('Failed to fetch')) {
+        setInstallError(`网络连接错误: 无法连接到服务器。请检查您的网络连接并重试。`);
+      } else if (errorMessage.includes('Request timeout')) {
+        setInstallError(`请求超时: 服务器没有及时响应。请稍后再试或检查URL是否有效。`);
+      } else if (errorMessage.includes('Failed to process request body')) {
+        setInstallError(`请求处理错误: ${errorMessage}`);
+      } else if (errorMessage.includes('Unsupported body type')) {
+        setInstallError(`请求处理错误: ${errorMessage}`);
+      } else if (errorMessage.includes('Failed to send request')) {
+        setInstallError(`请求发送错误: ${errorMessage}`);
       } else if (errorMessage.includes('Plugin execution failed')) {
         setInstallError(`插件执行错误: 插件代码可能包含语法错误或运行时错误。${errorMessage}`);
       } else if (errorMessage.includes('Invalid plugin format')) {
@@ -117,14 +151,36 @@ const PluginsPage = () => {
     }
   };
 
-  // 验证URL格式
+  // 验证URL格式并确保它使用http或https协议
   const isValidUrl = (url: string): boolean => {
     try {
-      new URL(url);
-      return true;
+      const parsedUrl = new URL(url);
+      return ['http:', 'https:'].includes(parsedUrl.protocol);
     } catch (error) {
       return false;
     }
+  };
+
+  // 增强的URL验证，增加更多检查项目
+  const isEnhancedValidUrl = async (url: string): Promise<{ isValid: boolean; errorMessage?: string }> => {
+    // 基本格式验证
+    if (!isValidUrl(url)) {
+      return { isValid: false, errorMessage: '请输入有效的插件URL（必须以http://或https://开头）' };
+    }
+
+    // 检查网络连接
+    const isConnected = await checkNetworkConnection();
+    if (!isConnected) {
+      return { isValid: false, errorMessage: '网络连接不可用，请检查您的网络设置后重试' };
+    }
+
+    // 检查URL格式是否完整
+    const parsedUrl = new URL(url);
+    if (!parsedUrl.hostname || !parsedUrl.pathname) {
+      return { isValid: false, errorMessage: 'URL格式不完整，请提供有效的插件文件地址' };
+    }
+
+    return { isValid: true };
   };
 
   return (

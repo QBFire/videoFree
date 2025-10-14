@@ -1,0 +1,10 @@
+小盒子单仓：http://xhztv.top/xhz 
+小盒子4K：http://xhztv.top/4k.json 
+饭太硬：http://fty.xxooo.cf/tv 
+小盒子多仓：http://xhztv.top/dc ！ 
+ 2. 公共接口
+其人之道：https://fastly.jsdelivr.net/gh/qirenzhidao/tvbox18@main/app.json 
+高天流云：https://fastly.jsdelivr.net/gh/gaotianliuyun/gao@master/0827.json 
+道长：https://gitlab.com/duomv/dzhipy/-/raw/main/index.json 
+香雅情：https://fastly.jsdelivr.net/gh/xyq254245/xyqonlinerule@main/XYQTVBox.json 
+潇洒：https://fastly.jsdelivr.net/gh/PizazzGY/TVBox@main/api.json liu673cn：https://fastly.jsdelivr.net/gh/liu673cn/box@main/m.json 蜗牛：https://tv.%E8%9C%97%E7%89%9B.top/DC.txt noimank：https://raw.gitcode.com/noimank/tvbox/raw/main/tvboxmuti.json

@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useAppStore } from '../store';
 import type { MediaInfo, EpisodeInfo } from '../types';
+import { pluginManager } from '../plugin/PluginManager';
 
 const DetailPage = () => {
   const params = useParams();
@@ -46,11 +47,35 @@ const DetailPage = () => {
     }
   ];
 
-  const handlePlayEpisode = (episode: EpisodeInfo) => {
-    // 设置当前媒体和剧集并打开播放器
-    setCurrentMedia(mockMediaDetail);
-    setCurrentEpisode(episode);
-    setIsPlayerOpen(true);
+  const handlePlayEpisode = async (episode: EpisodeInfo) => {
+    try {
+      // 设置当前媒体
+      setCurrentMedia(mockMediaDetail);
+      
+      // 获取播放链接
+      const playUrl = await pluginManager.getPlayUrl('sample-plugin', episode.id);
+      
+      // 创建包含播放链接的新剧集对象
+      const episodeWithPlayUrl = {
+        ...episode,
+        playUrl: playUrl || 'https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.mp4'
+      };
+      
+      // 设置当前剧集并打开播放器
+      setCurrentEpisode(episodeWithPlayUrl);
+      setIsPlayerOpen(true);
+    } catch (error) {
+      console.error('Failed to get play URL:', error);
+      // 即使获取播放链接失败，也设置当前剧集并打开播放器
+      // 使用默认播放链接
+      const episodeWithFallbackUrl = {
+        ...episode,
+        playUrl: 'https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.mp4'
+      };
+      setCurrentMedia(mockMediaDetail);
+      setCurrentEpisode(episodeWithFallbackUrl);
+      setIsPlayerOpen(true);
+    }
   };
 
   const handleAddToFavorites = () => {

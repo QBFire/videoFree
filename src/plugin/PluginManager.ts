@@ -387,17 +387,38 @@ class PluginManager {
       console.log(`Loading plugin from URL: ${url}`);
       
       // 使用fetch从URL加载插件代码 - 使用Edge兼容的fetch
-      const response = await fetchForEdge(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/javascript',
-        },
-        // 添加cache-control以确保获取最新的插件代码
-        cache: 'no-cache'
-      });
+      let response;
+      try {
+        response = await fetchForEdge(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/javascript',
+          },
+          // 添加cache-control以确保获取最新的插件代码
+          cache: 'no-cache'
+        });
+      } catch (fetchError) {
+        // 专门捕获fetch相关错误
+        const errorMessage = fetchError instanceof Error 
+          ? fetchError.message 
+          : 'Unknown network error';
+        throw new Error(`Network error when fetching plugin from URL: ${url}. Error: ${errorMessage}`);
+      }
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch plugin: ${response.status} ${response.statusText}`);
+        // 为常见的HTTP错误提供更具体的错误消息
+        if (response.status === 404) {
+          throw new Error(`Failed to fetch plugin from URL: ${url}. Server returned 404 Not Found: The requested resource was not found.`);
+        } else if (response.status === 403) {
+          throw new Error(`Failed to fetch plugin from URL: ${url}. Server returned 403 Forbidden: You don't have permission to access this resource.`);
+        } else if (response.status === 500) {
+          throw new Error(`Failed to fetch plugin from URL: ${url}. Server returned 500 Internal Server Error: There's an issue with the server.`);
+        } else if (response.status >= 400 && response.status < 500) {
+          throw new Error(`Failed to fetch plugin from URL: ${url}. Client error: ${response.status} ${response.statusText}`);
+        } else if (response.status >= 500) {
+          throw new Error(`Failed to fetch plugin from URL: ${url}. Server error: ${response.status} ${response.statusText}`);
+        }
+        throw new Error(`Failed to fetch plugin from URL: ${url}. Server returned error: ${response.status} ${response.statusText}`);
       }
       
       // 获取插件代码文本

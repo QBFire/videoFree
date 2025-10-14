@@ -124,7 +124,7 @@ export const fetchForEdge = async (url: string, options?: RequestInit): Promise<
     
     // 检查响应是否成功
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
     }
     
     return response;
@@ -143,6 +143,10 @@ export const fetchForEdge = async (url: string, options?: RequestInit): Promise<
         });
       }
       
+      // 添加超时处理
+      xhr.timeout = 10000; // 10 seconds timeout
+      
+      // 处理成功响应
       xhr.onload = () => {
         const headers = new Headers();
         // 解析响应头
@@ -167,34 +171,50 @@ export const fetchForEdge = async (url: string, options?: RequestInit): Promise<
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(response);
         } else {
-          reject(new Error(`HTTP error! Status: ${xhr.status}`));
+          reject(new Error(`HTTP error! Status: ${xhr.status} ${xhr.statusText}`));
         }
       };
       
+      // 处理网络错误
       xhr.onerror = () => {
-        reject(new Error('Network error occurred'));
+        reject(new Error('Network error: Failed to connect to the server. Please check your internet connection and try again.'));
+      };
+      
+      // 处理超时
+      xhr.ontimeout = () => {
+        reject(new Error('Request timeout: The server did not respond in time. Please try again later.'));
       };
       
       // 发送请求
-      if (edgeOptions.body) {
-        // 处理不同类型的body - 确保类型兼容
-        if (typeof edgeOptions.body === 'string') {
-          xhr.send(edgeOptions.body);
-        } else if (edgeOptions.body instanceof Blob) {
-          xhr.send(edgeOptions.body);
-        } else if (edgeOptions.body instanceof FormData) {
-          xhr.send(edgeOptions.body);
-        } else if (edgeOptions.body instanceof ArrayBuffer) {
-          xhr.send(edgeOptions.body);
-        } else if (typeof edgeOptions.body === 'object') {
-          // 对于其他对象类型，尝试转换为JSON字符串
-          xhr.send(JSON.stringify(edgeOptions.body));
+      try {
+        if (edgeOptions.body) {
+          // 处理不同类型的body - 确保类型兼容
+          if (typeof edgeOptions.body === 'string') {
+            xhr.send(edgeOptions.body);
+          } else if (edgeOptions.body instanceof Blob) {
+            xhr.send(edgeOptions.body);
+          } else if (edgeOptions.body instanceof FormData) {
+            xhr.send(edgeOptions.body);
+          } else if (edgeOptions.body instanceof ArrayBuffer) {
+            xhr.send(edgeOptions.body);
+          } else if (typeof edgeOptions.body === 'object') {
+            // 对于其他对象类型，尝试转换为JSON字符串
+            try {
+              xhr.setRequestHeader('Content-Type', 'application/json');
+              xhr.send(JSON.stringify(edgeOptions.body));
+            } catch (jsonError) {
+              reject(new Error(`Failed to process request body: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}`));
+              return;
+            }
+          } else {
+            reject(new Error('Unsupported body type for XMLHttpRequest fallback'));
+            return;
+          }
         } else {
-          // 对于不支持的类型，不发送body
           xhr.send();
         }
-      } else {
-        xhr.send();
+      } catch (sendError) {
+        reject(new Error(`Failed to send request to ${url}: ${sendError instanceof Error ? sendError.message : 'Unknown error'}`));
       }
     });
   }
