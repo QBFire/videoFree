@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { PlaybackState } from '../types';
 import { formatTime } from '../utils/helpers';
@@ -7,6 +8,7 @@ import { isEdgeBrowser, applyEdgeCssFixes } from '../utils/edgeCompatibility';
 const Player = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
+  const navigate = useNavigate();
   
   const { 
     currentMedia, 
@@ -25,7 +27,7 @@ const Player = () => {
   const [showControls, setShowControls] = useState(true);
   
   // 视频源 - 添加类型检查确保是字符串
-  const videoSource = typeof currentEpisode?.playUrl === 'string' ? currentEpisode.playUrl : 'https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.mp4';
+  const videoSource = typeof currentEpisode?.playUrl === 'string' ? currentEpisode.playUrl : 'https://www.w3schools.com/html/mov_bbb.mp4';
   
   // 组件挂载后应用Edge特定的CSS修复
   useEffect(() => {
@@ -83,7 +85,7 @@ const Player = () => {
 
     controlsTimeoutRef.current = setTimeout(() => {
       setShowControls(false);
-    }, 3000);
+    }, 3000) as unknown as number;
   };
 
   // 控制条显示/隐藏逻辑
@@ -92,7 +94,7 @@ const Player = () => {
 
     const hideControls = () => {
       if (showControls) {
-        timeout = setTimeout(() => setShowControls(false), 3000);
+        timeout = setTimeout(() => setShowControls(false), 3000) as unknown as number;
       }
     };
 
@@ -200,9 +202,21 @@ const Player = () => {
   // 处理关闭播放器
   const handleClose = () => {
     if (videoRef.current) {
-      videoRef.current.pause();
+      try {
+        // Use a safer approach to pause the video
+        videoRef.current.pause().catch(e => {
+          // Silently catch AbortError that occurs when play is interrupted
+          if (e.name !== 'AbortError') {
+            console.warn('Error pausing video:', e);
+          }
+        });
+      } catch (error) {
+        // Ignore any errors during pause
+      }
     }
     setIsPlayerOpen(false);
+    // 导航回主页，实现"关闭当前页面"的效果
+    navigate('/');
   };
 
   if (!currentMedia) return null;
@@ -223,6 +237,14 @@ const Player = () => {
                 src={videoSource}
                 onTimeUpdate={handleTimeUpdate}
                 onClick={handleTogglePlay}
+                onError={(e) => {
+                  // Handle any video errors silently to prevent console noise
+                  const target = e.target as HTMLVideoElement;
+                  if (target.error?.code === target.error.ABORT_ERR) {
+                    // Ignore AbortError which happens when play is interrupted
+                    return;
+                  }
+                }}
                 className="video-element"
                 data-testid="video-element"
               />

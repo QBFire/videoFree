@@ -38,7 +38,7 @@ const DetailPage = () => {
 
   const mockEpisodes: EpisodeInfo[] = [
     {
-      id: 'episode-1',
+      id: 'movie2_ep1',
       title: '流浪地球3 - 正片',
       description: '完整正片',
       index: 1,
@@ -58,7 +58,7 @@ const DetailPage = () => {
       // 创建包含播放链接的新剧集对象
       const episodeWithPlayUrl = {
         ...episode,
-        playUrl: playUrl || 'https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.mp4'
+        playUrl: playUrl || 'https://www.w3schools.com/html/mov_bbb.mp4'
       };
       
       // 设置当前剧集并打开播放器
@@ -70,7 +70,7 @@ const DetailPage = () => {
       // 使用默认播放链接
       const episodeWithFallbackUrl = {
         ...episode,
-        playUrl: 'https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.mp4'
+        playUrl: 'https://www.w3schools.com/html/mov_bbb.mp4'
       };
       setCurrentMedia(mockMediaDetail);
       setCurrentEpisode(episodeWithFallbackUrl);

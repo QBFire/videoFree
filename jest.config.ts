@@ -1,21 +1,15 @@
-/**
- * Jest 配置文件
- * 用于单元测试和集成测试
- */
-
-export default {
+/** @type {import('ts-jest').JestConfigWithTsJest} */
+const config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   transform: {
-    '^.+\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.test.json',
+    '^.+\.(ts|tsx)$': ['ts-jest', { 
+      tsconfig: './tsconfig.test.json',
+      jsx: 'react-jsx' 
     }],
+    '^.+\.(css|less|scss|sass)$': '<rootDir>/mocks/styleMock.js'
   },
-  // @ts-ignore - moduleNameMapping is a valid Jest option
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.(css|less|scss|sass)$': '<rootDir>/mocks/styleMock.js',
-  },
+
   transformIgnorePatterns: ['<rootDir>/node_modules/'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   collectCoverageFrom: [
@@ -27,7 +21,9 @@ export default {
   coverageReporters: ['text', 'lcov'],
   testMatch: [
     '<rootDir>/tests/unit/**/*.test.{ts,tsx}',
-    // Skip integration tests for now due to configuration issues
+    '<rootDir>/tests/integration/**/*.test.{ts,tsx}'
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-} as any;
+};
+
+export default config;

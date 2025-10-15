@@ -95,7 +95,8 @@ const HomePage = () => {
   const handleMediaClick = (media: MediaInfo) => {
     // 使用AppStore的setCurrentMedia方法来设置当前播放的媒体
     setCurrentMedia(media);
-    console.log('Media clicked:', media);
+    // 导航到详情页，并传递媒体ID和source作为参数
+    navigate(`/detail/${media.id}/${media.source}`);
   };
 
   return (

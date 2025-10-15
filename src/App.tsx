@@ -17,7 +17,7 @@ import PluginsPage from './pages/PluginsPage';
 import './App.css';
 
 function App() {
-  const { loadUserPreferences, currentMedia } = useAppStore();
+  const { loadUserPreferences, isPlayerOpen } = useAppStore();
 
   // 应用初始化
   useEffect(() => {
@@ -61,11 +61,11 @@ function App() {
           </div>
         </main>
         
-        {/* 播放器 */}
-        {currentMedia && <Player />}
+        {/* 播放器 - 使用isPlayerOpen状态控制显示 */}
+        {isPlayerOpen && <Player />}
       </div>
     </Router>
   );
 }
 
-export default App
+export default App;
