@@ -18,7 +18,8 @@ const Player = () => {
     volume,
     setVolume,
     isMuted,
-    setIsMuted
+    setIsMuted,
+    setIsPlayerOpen
   } = useAppStore();
 
   const [showControls, setShowControls] = useState(true);
@@ -201,6 +202,7 @@ const Player = () => {
     if (videoRef.current) {
       videoRef.current.pause();
     }
+    setIsPlayerOpen(false);
   };
 
   if (!currentMedia) return null;

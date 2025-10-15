@@ -202,7 +202,7 @@ export const fetchForEdge = async (url: string, options?: RequestInit): Promise<
             try {
               xhr.setRequestHeader('Content-Type', 'application/json');
               xhr.send(JSON.stringify(edgeOptions.body));
-            } catch (jsonError) {
+            } catch (jsonError: any) {
               reject(new Error(`Failed to process request body: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}`));
               return;
             }

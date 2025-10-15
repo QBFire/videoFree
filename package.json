@@ -43,6 +43,7 @@
     "identity-obj-proxy": "3.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "puppeteer": "24.24.1",
     "ts-jest": "^29.2.4",
     "ts-node": "10.9.2",
     "typescript": "~5.9.3",

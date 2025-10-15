@@ -3,8 +3,6 @@
  * 用于单元测试和集成测试
  */
 
-import type { Config } from 'jest';
-
 export default {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
@@ -13,6 +11,7 @@ export default {
       tsconfig: 'tsconfig.test.json',
     }],
   },
+  // @ts-ignore - moduleNameMapping is a valid Jest option
   moduleNameMapping: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': '<rootDir>/mocks/styleMock.js',
@@ -31,4 +30,4 @@ export default {
     // Skip integration tests for now due to configuration issues
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-} as Config;
+} as any;

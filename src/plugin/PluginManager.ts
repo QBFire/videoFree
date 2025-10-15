@@ -397,10 +397,10 @@ class PluginManager {
           // 添加cache-control以确保获取最新的插件代码
           cache: 'no-cache'
         });
-      } catch (fetchError) {
+      } catch (error) {
         // 专门捕获fetch相关错误
-        const errorMessage = fetchError instanceof Error 
-          ? fetchError.message 
+        const errorMessage = error instanceof Error 
+          ? error.message 
           : 'Unknown network error';
         throw new Error(`Network error when fetching plugin from URL: ${url}. Error: ${errorMessage}`);
       }
